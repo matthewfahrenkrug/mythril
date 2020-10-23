@@ -14,6 +14,12 @@ macro_rules! read_register {
             Error::InvalidValue("Invalid length with reading register".into())
         })?;
     }};
+    ($out:ident, $value:expr, $type:ty, $mask:expr) => {{
+        let data = (($value & $mask) as $type).to_be_bytes();
+        $out.try_extend_from_slice(&data).map_err(|_| {
+            Error::InvalidValue("Invalid length with reading register".into())
+        })?;
+    }};
 }
 
 macro_rules! write_register {
@@ -133,6 +139,19 @@ fn read_register_value(
         iced_x86::Register::EBP => read_register!(res, guest_cpu.rbp, u32),
         iced_x86::Register::RBP => read_register!(res, guest_cpu.rbp, u64),
 
+        iced_x86::Register::AH => {
+            read_register!(res, guest_cpu.rax, u16, 0xFF00)
+        }
+        iced_x86::Register::BH => {
+            read_register!(res, guest_cpu.rbx, u16, 0xFF00)
+        }
+        iced_x86::Register::CH => {
+            read_register!(res, guest_cpu.rcx, u16, 0xFF00)
+        }
+        iced_x86::Register::DH => {
+            read_register!(res, guest_cpu.rdx, u16, 0xFF00)
+        }
+
         _ => {
             return Err(Error::InvalidValue(format!(
                 "Invalid register '{:?}'",
@@ -209,6 +228,15 @@ fn do_mmio_read(
                 u8,
                 !0xff
             ),
+            iced_x86::Register::AH => write_register!(
+                vm,
+                vcpu,
+                addr,
+                responses,
+                guest_cpu.rax,
+                u16,
+                !0xff00
+            ),
             iced_x86::Register::AX => write_register!(
                 vm,
                 vcpu,
@@ -245,6 +273,15 @@ fn do_mmio_read(
                 guest_cpu.rbx,
                 u8,
                 !0xff
+            ),
+            iced_x86::Register::BH => write_register!(
+                vm,
+                vcpu,
+                addr,
+                responses,
+                guest_cpu.rbx,
+                u16,
+                !0xff00
             ),
             iced_x86::Register::BX => write_register!(
                 vm,
@@ -283,6 +320,15 @@ fn do_mmio_read(
                 u8,
                 !0xff
             ),
+            iced_x86::Register::CH => write_register!(
+                vm,
+                vcpu,
+                addr,
+                responses,
+                guest_cpu.rcx,
+                u16,
+                !0xff00
+            ),
             iced_x86::Register::CX => write_register!(
                 vm,
                 vcpu,
@@ -319,6 +365,15 @@ fn do_mmio_read(
                 guest_cpu.rdx,
                 u8,
                 !0xff
+            ),
+            iced_x86::Register::DH => write_register!(
+                vm,
+                vcpu,
+                addr,
+                responses,
+                guest_cpu.rdx,
+                u16,
+                !0xff00
             ),
             iced_x86::Register::DX => write_register!(
                 vm,
