@@ -20,6 +20,12 @@ macro_rules! read_register {
             Error::InvalidValue("Invalid length with reading register".into())
         })?;
     }};
+    ($out:ident, $value:expr, $type:ty) => {{
+        let data = ($value as $type).to_be_bytes();
+        $out.try_extend_from_slice(&data).map_err(|_| {
+            Error::InvalidValue("Invalid length with reading register".into())
+        })?;
+    }};
 }
 
 macro_rules! write_register {
@@ -43,7 +49,6 @@ fn read_register_value(
 ) -> Result<ArrayVec<[u8; 8]>> {
     let mut res = ArrayVec::new();
 
-    // TODO: we should probably support the AH style registers
     match register {
         iced_x86::Register::AL => read_register!(res, guest_cpu.rax, u8),
         iced_x86::Register::AX => read_register!(res, guest_cpu.rax, u16),
