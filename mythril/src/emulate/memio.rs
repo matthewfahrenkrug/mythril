@@ -20,6 +20,9 @@ macro_rules! read_register {
             Error::InvalidValue("Invalid length with reading register".into())
         })?;
     }};
+    //TODO: The main thing left is we need to figure out how to handle the byte
+    //shift after we read back the correct value. I know how to do a shift, but
+    //I'm not sure the best way to do a byte shift on an arrayvec
     ($out:ident, $value:expr, $type:ty) => {{
         let data = ($value as $type).to_be_bytes();
         $out.try_extend_from_slice(&data).map_err(|_| {
@@ -38,7 +41,8 @@ macro_rules! write_register {
             $vcpu,
             $responses,
         )?;
-        $value = ($value & $mask) | <$type>::from_be_bytes(buff) as u64;
+        //TODO: Does the buff need to me masked also?
+        $value = ($value & $mask) | (<$type>::from_be_bytes(buff) as u64 & $mask);
     }};
 }
 
